@@ -1,11 +1,11 @@
 const asyncHandler = (requesthandler) => {   //promises
-    (req, res, next) => {
+    return (req, res, next) => {
         Promise.resolve(requesthandler(req, res, next))
         .catch((err)=>next(err))            //if rejected
     }
 } 
-
-
+// ye isliye hai ki jab hum controller likhe to har e=request ko hum try catch me nahi dalna pdega ye khud se ek promise likhke send kr dega
+//it is higher order function which teke function as a parameter
 export {asyncHandler}
 
 

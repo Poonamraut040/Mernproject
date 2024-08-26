@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 import connectDB from './db/index.js';
 import { app } from './app.js';
-// import { Owner } from './models/owner.js';
 
 dotenv.config({   //to access the env file
     path:'./.env'
