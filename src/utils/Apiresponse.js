@@ -7,4 +7,6 @@ class ApiResponse {
     }
 }
 
+export {ApiResponse}
+
 // for fullfill the api request 

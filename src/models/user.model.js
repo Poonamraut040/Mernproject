@@ -1,6 +1,7 @@
-import mongoose,{Schema} from "mongoose";
+import mongoose, {Schema} from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { ApiError } from "../utils/apierror.js";
 
 
 const userSchema = new Schema(
@@ -52,17 +53,32 @@ const userSchema = new Schema(
 )
 
 //for encryption of password just before saving data   pre=(hooks or middleware)
-userSchema.pre(" save", async function (next) {   //ecryption takes time isliye async use krege aur next ko call kr dege ki aage ki procedure kro
-    if(!this.isModified("password")) return next();
-    //else
-    this.password = bcrypt.hash(this.password, 10)
-    next()
-})
+userSchema.pre("save", async function(next) { 
+      //ecryption takes time isliye async use krege aur next ko call kr dege ki aage ki procedure kro
+{    if(!this.isModified("password")) return next();
+}    
+try {
+        const salt = await bcrypt.genSalt(10)
+        const hashedPassword = await bcrypt.hash(this.password, salt);
+        this.password = hashedPassword;
+        next();
+    
+} catch (error) {
+    throw new ApiError(400, "Password is not hashed")
+}})
+//jo password user ne login krte samay dala usko jo bcrypt password se compare krege
+userSchema.methods.isPasswordCorrect = async function(password){
+try {
+        return await bcrypt.compare(password, this.password)
+    
+} catch (error) {
+    throw new ApiError(404,"issue in comparing")
+    next(error);
+}}
 
-// jo password user ne login krte samay dala usko jo bcrypt password se compare krege
-userSchema.methods.ispasswordCorrect = async function(password){
-    return await bcrypt.compare(password, this.password)
-}
+
+
+
 
 //jwt is basically used jab user login krta hai to usko kitne der tk data bhej sakte hai jaise yaha ek din tk server
 // client / mobile user ko login ke baad ek token dega aur jab bhi server ko request jayegi to ye token ke sath 
