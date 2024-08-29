@@ -21,7 +21,7 @@ const generateAccessAndRefreshTokens =  async(userId) => {
 
     } catch (error) {
 
-        throw new ApiError(500," something went wrong wile accessing token")
+        throw new ApiError(500," something went wrong while accessing token")
     }
 }
 
@@ -181,7 +181,7 @@ const logoutUser = asyncHandler(async(req, res) => {
         req.user._id,
         {
             $unset:{
-                refreshTOken:1
+                refreshToken:1
             }
         },{
             new: true
@@ -200,8 +200,54 @@ const logoutUser = asyncHandler(async(req, res) => {
     .json(new ApiResponse(200, {},"user logged out successfully"))
 })
 
+const refreshAccessToken = asyncHandler (async (req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if(incomingRefreshToken){
+        throw new ApiError(401, "unauthorized request")
+    }
+
+try {
+        const decodedToken = jwt.verify(incomingRefreshToken, 
+            process.env.ACCESS_TOKEN_SECRET)
+    
+        const user = await User.findById(decodedToken?._id)
+    
+        if(!user){
+            throw new ApiError(401, "invalid refrsh token")
+        }
+    
+        if(incomingRefreshToken != user?.refreshToken){
+            throw new ApiError(401, "used or expired refresh token")
+        }
+    
+        const options = {
+            httpOnly:true,
+            secure:true
+        }
+    
+        const {accessToken, newrefreshToken} = await generateAccessAndRefreshTokens(user._id)
+    
+        return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                {accessToken, refreshToken:newrefreshToken},
+                "Access token refreshed successfully"
+            )
+        )
+    
+} catch (error) {
+    throw new ApiError(401, error?.message || "invalid refresh Token")
+}})
+
+
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser, 
+    refreshAccessToken
 }
